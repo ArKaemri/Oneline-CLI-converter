@@ -8,31 +8,95 @@ import sys
 # then base result converted to desired units (no need for if-else/choice hell)
 ###
 length_units = {
-    
+    'pm': 0.000000000001,
+    'nm': 0.000000001,
+    'um': 0.000001,
+    'mm': 0.001,
+    'cm': 0.01,
+    'm': 1, # base
+    'km': 1000,
+    'inch': 0.0254,
+    'ft': 0.3048,
+    'yard': 0.9144,
+    'mile': 1609.344
 }
 
 weight_units = {
-    
+    'pg': 0.000000000001,
+    'ng': 0.000000001,
+    'ug': 0.000001,
+    'mg': 0.001,
+    'g': 1, # base
+    'kg': 1000,
+    'tonne': 1000000,
+    'oz': 28.34952,
+    'lbs': 453.5924
 }
 
 speed_units = {
-    
+    'cm/s': 0.01,
+    'm/s': 1, # base
+    'm/min': 0.0166666667,
+    'km/s': 1000,
+    'km/min': 16.666666667,
+    'km/h': 0.2777778,
+    'ips': 0.0254,
+    'fps': 0.3048,
+    'mph': 0.44704,
+    'knot': 0.5144447
 }
 
 time_units = {
-    
+    'ps': 0.000000000001,
+    'ns': 0.000000001,
+    'us': 0.000001,
+    'ms': 0.001,
+    's': 1, # base
+    'min': 60,
+    'h': 3600,
+    'day': 86400,
+    'week': 604800,
+    'month': 2629800,
+    'year': 31557600
 }
 
 to_celsius = {
-    
+    'C': lambda x: x, # base
+    'K': lambda x: x - 273.15,
+    'F': lambda x: x - 32 * (5/9)
 }
 
 from_celsius = {
-    
+    'C': lambda x: x, # base
+    'K': lambda x: x + 273.15,
+    'F': lambda x: x * (9/5) + 32
 }
 
 timezones = {
-    
+    'utc-11': -11,
+    'utc-10': -10,
+    'utc-9': -9,
+    'utc-8': -8,
+    'utc-7': -7,
+    'utc-6': -6,
+    'utc-5': -5,
+    'utc-4': -4,
+    'utc-3': -3,
+    'utc-2': -2,
+    'utc-1': -1,
+    'utc+0': 0, # base
+    'utc+1': 1,
+    'utc+2': 2,
+    'utc+3': 3,
+    'utc+4': 4,
+    'utc+5': 5,
+    'utc+6': 6,
+    'utc+7': 7,
+    'utc+8': 8,
+    'utc+9': 9,
+    'utc+10': 10,
+    'utc+11': 11,
+    'utc+12': 12
 }
 
 # ___________________________ Read CLI data ___________________________
@@ -42,7 +106,8 @@ timezones = {
 ###
 argv = sys.argv[1:]
 if len(argv) != 3:
-    print('Wrong input, example - python convert.py 12 cm m')
+    print('Wrong input, example - python convert.py 12 cm m\n')
+    print('P.S. use singular unit name - inch not inches')
     sys.exit()
 argv = [x.lower() for x in argv]
 value = argv[0]
