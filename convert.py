@@ -61,15 +61,15 @@ time_units = {
 }
 
 to_celsius = {
-    'C': lambda x: x, # base
-    'K': lambda x: x - 273.15,
-    'F': lambda x: x - 32 * (5/9)
+    'c': lambda x: x, # base
+    'k': lambda x: x - 273.15,
+    'f': lambda x: x - 32 * (5/9)
 }
 
 from_celsius = {
-    'C': lambda x: x, # base
-    'K': lambda x: x + 273.15,
-    'F': lambda x: x * (9/5) + 32
+    'c': lambda x: x, # base
+    'k': lambda x: x + 273.15,
+    'f': lambda x: x * (9/5) + 32
 }
 
 timezones = {
@@ -121,39 +121,62 @@ target = argv[2]
 # example: 12 cm km -> 12 * 0.01 (cm:0.01) -> 0.12 / 1000 (km:1000) -> 0.00012 km
 ###
 # --------------- weight
-def weight_convert():
+def weight_convert(val, src, target):
     return
 
 # --------------- length
-def length_convert():
+def length_convert(val, src, target):
     return
 
 # --------------- time
-def time_convert():
+def time_convert(val, src, target):
     return
 
 # --------------- speed
-def speed_convert():
+def speed_convert(val, src, target):
     return
 
 # ___________________________ Temperature conversion ___________________________
+def temp_convert(val, src, target):
 ###
-# similar to simple conversions
 # 1) convert temperature to Celsius
 # 2) convert Celsius to desired units
 # example: 12 C K -> 12 (celsius is base, - if other) -> 12 + 273.15 -> 285.15
 ###
-def temp_convert():
+    # convert back to capital
     return
 
 # ___________________________ Time zone conversion ___________________________
+def time_zone_convert(val, src, target):
 ###
-# similar to simple conversions
 # 1) convert everything to UTC (example: EDT+6 -> UTC+6)
 # 2) convert to UTC+0 (by subtracting number after letters)
 # 3) convert to desired displacement (add number after letters)
 # example: 4:30 EDT-2 GMT+4.30
 # 4:30 EDT-2 -> 4:30 UTC-2 -> 6:30 UTC+0 -> 11:00 UTC+4.30
 ###
-def time_zone_convert():
+    # convert back to capital 
     return
+
+# ___________________________ Choose conversion ___________________________
+###
+# run if-else check to choose function based on input
+# if source and target units match dictionary keys, run function based on dictionary
+# both target and source need to be from same dictionary to work
+###
+conversions = [
+    (length_units, length_convert),
+    (weight_units, weight_convert),
+    (speed_units, speed_convert),
+    (time_units, time_convert),
+    (to_celsius, temp_convert),
+    (timezones, time_zone_convert)
+]
+
+for unit_dict, conversion_type in conversions:
+    if source in unit_dict and target in unit_dict:
+        conversion_type(value, source, target)
+        break
+# else statement to 'for' not to 'if' (if 'for' loop finishes without calling 'break' - execute 'else')
+else:
+    print(f'Cannot convert {source} to {target}')
