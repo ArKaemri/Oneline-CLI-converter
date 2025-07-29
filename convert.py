@@ -178,3 +178,10 @@ for unit_dict, conversion_type in conversions:
 # else statement to 'for' not to 'if' (if 'for' loop finishes without calling 'break' (if statement is wrong) - execute 'else')
 else:
     print(f'Cannot convert {source} to {target}')
+    print("Possible conversions:")
+    print(", ".join(length_units.keys()))
+    print(", ".join(weight_units.keys()))
+    print(", ".join(time_units.keys()))
+    print(", ".join(speed_units.keys()))
+    print(", ".join(to_celsius.keys()))
+    print(", ".join(timezones.keys()))
