@@ -123,14 +123,11 @@ target = argv[2]
 # --------------- weight, length, speed, time
 def simple_convert(val, src, target): 
     for unit_dict in [length_units, weight_units, speed_units, time_units]:
-        if src in unit_dict and target in unit_dict:
+        if src in unit_dict:
             val = float(val)
             result = val * unit_dict[src] / unit_dict[target]
             print(f'{val}{src} = {round(result, 2)}{target}')
             break
-    # else statement to 'for' not to 'if' (if 'for' loop finishes without calling 'break' (if statement is wrong) - execute 'else')
-    else:
-        print(f'Cannot convert {src} to {target}')
 
 # ___________________________ Temperature conversion ___________________________
 def temp_convert(val, src, target):
@@ -139,8 +136,13 @@ def temp_convert(val, src, target):
 # 2) convert Celsius to desired units
 # example: 12 C K -> 12 (celsius is base, - if other) -> 12 + 273.15 -> 285.15
 ###
-    # convert back to capital
-    return
+    val = float(val)
+    celsius = to_celsius[src](val) 
+    result = from_celsius[target](celsius)
+    # temperature units written in capital letters
+    src = src.capitalize()
+    target = target.capitalize()
+    print(f'{val}{src} = {result}{target}')
 
 # ___________________________ Time zone conversion ___________________________
 def time_zone_convert(val, src, target):
@@ -173,5 +175,6 @@ for unit_dict, conversion_type in conversions:
     if source in unit_dict and target in unit_dict:
         conversion_type(value, source, target)
         break
+# else statement to 'for' not to 'if' (if 'for' loop finishes without calling 'break' (if statement is wrong) - execute 'else')
 else:
     print(f'Cannot convert {source} to {target}')
