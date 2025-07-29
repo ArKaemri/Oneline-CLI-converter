@@ -120,21 +120,17 @@ target = argv[2]
 # 2) divide result from desired units dictionary value
 # example: 12 cm km -> 12 * 0.01 (cm:0.01) -> 0.12 / 1000 (km:1000) -> 0.00012 km
 ###
-# --------------- weight
-def weight_convert(val, src, target):
-    return
-
-# --------------- length
-def length_convert(val, src, target):
-    return
-
-# --------------- time
-def time_convert(val, src, target):
-    return
-
-# --------------- speed
-def speed_convert(val, src, target):
-    return
+# --------------- weight, length, speed, time
+def simple_convert(val, src, target): 
+    for unit_dict in [length_units, weight_units, speed_units, time_units]:
+        if src in unit_dict and target in unit_dict:
+            val = float(val)
+            result = val * unit_dict[src] / unit_dict[target]
+            print(f'{val}{src} = {round(result, 2)}{target}')
+            break
+    # else statement to 'for' not to 'if' (if 'for' loop finishes without calling 'break' (if statement is wrong) - execute 'else')
+    else:
+        print(f'Cannot convert {src} to {target}')
 
 # ___________________________ Temperature conversion ___________________________
 def temp_convert(val, src, target):
@@ -160,15 +156,15 @@ def time_zone_convert(val, src, target):
 
 # ___________________________ Choose conversion ___________________________
 ###
-# run if-else check to choose function based on input
+# run 'if' check to choose function based on input
 # if source and target units match dictionary keys, run function based on dictionary
 # both target and source need to be from same dictionary to work
 ###
 conversions = [
-    (length_units, length_convert),
-    (weight_units, weight_convert),
-    (speed_units, speed_convert),
-    (time_units, time_convert),
+    (length_units, simple_convert),
+    (weight_units, simple_convert),
+    (speed_units, simple_convert),
+    (time_units, simple_convert),
     (to_celsius, temp_convert),
     (timezones, time_zone_convert)
 ]
@@ -177,6 +173,5 @@ for unit_dict, conversion_type in conversions:
     if source in unit_dict and target in unit_dict:
         conversion_type(value, source, target)
         break
-# else statement to 'for' not to 'if' (if 'for' loop finishes without calling 'break' - execute 'else')
 else:
     print(f'Cannot convert {source} to {target}')
