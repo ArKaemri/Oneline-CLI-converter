@@ -28,7 +28,7 @@ weight_units = {
     'mg': 0.001,
     'g': 1, # base
     'kg': 1000,
-    'tonne': 1000000,
+    'ton': 1000000,
     'oz': 28.34952,
     'lbs': 453.5924
 }
@@ -140,8 +140,8 @@ def temp_convert(val, src, target):
     celsius = to_celsius[src](val) 
     result = from_celsius[target](celsius)
     # temperature units written in capital letters
-    src = src.capitalize()
-    target = target.capitalize()
+    src = src.upper()
+    target = target.upper()
     print(f'{val}{src} = {result}{target}')
 
 # ___________________________ Time zone conversion ___________________________
@@ -178,10 +178,11 @@ for unit_dict, conversion_type in conversions:
 # else statement to 'for' not to 'if' (if 'for' loop finishes without calling 'break' (if statement is wrong) - execute 'else')
 else:
     print(f'Cannot convert {source} to {target}')
-    print("Possible conversions:")
-    print(", ".join(length_units))
-    print(", ".join(weight_units))
-    print(", ".join(time_units))
-    print(", ".join(speed_units))
-    print(", ".join(to_celsius))
-    print(", ".join(timezones))
+    print('Possible conversions:')
+    print('Length: ' + ', '.join(length_units))
+    print('Weight: ' + ', '.join(weight_units))
+    print('Time: ' + ', '.join(time_units))
+    print('Speed: ' + ', '.join(speed_units))
+    temp_visual = [key.upper() for key, _ in to_celsius.items()]
+    print('Temperature: ' + ', '.join(temp_visual))
+    print('Timezones: ***-11 to ***+12')
