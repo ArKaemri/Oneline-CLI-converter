@@ -1,7 +1,7 @@
 # ___________________________ Dependencies ___________________________
 import sys
-
-# ___________________________ Base dictionaries ___________________________
+import re
+# ___________________________ Simple dictionaries ___________________________
 ###
 # dictionaries keep all values and how to convert them to 'base'
 # example: cm to m, km to m, lbs to g, kg to g
@@ -72,33 +72,6 @@ from_celsius = {
     'f': lambda x: x * (9/5) + 32
 }
 
-timezones = {
-    'utc-11': -11,
-    'utc-10': -10,
-    'utc-9': -9,
-    'utc-8': -8,
-    'utc-7': -7,
-    'utc-6': -6,
-    'utc-5': -5,
-    'utc-4': -4,
-    'utc-3': -3,
-    'utc-2': -2,
-    'utc-1': -1,
-    'utc+0': 0, # base
-    'utc+1': 1,
-    'utc+2': 2,
-    'utc+3': 3,
-    'utc+4': 4,
-    'utc+5': 5,
-    'utc+6': 6,
-    'utc+7': 7,
-    'utc+8': 8,
-    'utc+9': 9,
-    'utc+10': 10,
-    'utc+11': 11,
-    'utc+12': 12
-}
-
 # ___________________________ Read CLI data ___________________________
 ###
 # get data from CLI
@@ -147,14 +120,51 @@ def temp_convert(val, src, target):
 # ___________________________ Time zone conversion ___________________________
 def time_zone_convert(val, src, target):
 ###
-# 1) convert everything to UTC (example: EDT+6 -> UTC+6)
-# 2) convert to UTC+0 (by subtracting number after letters)
-# 3) convert to desired displacement (add number after letters)
-# example: 4:30 EDT-2 GMT+4.30
-# 4:30 EDT-2 -> 4:30 UTC-2 -> 6:30 UTC+0 -> 11:00 UTC+4.30
+# 1) divide input into 3 parts (symbolic - UTC or EST etc., symbol - +/-, amount - 3 or 4:30 etc.)
+# 2) convert amount's and value to time (without seconds)
+# 3) from value subtract source amount and add target amount
+# 4) output starting symbolic (upper before outputing) + result time 
 ###
-    # convert back to capital 
-    return
+    def parse_timezone(data):
+        # get values from timezone input
+        list = re.match(r'^([a-z]{2,4})([+-])(\d{1,2})(?::(\d{2}))?$', data)
+        label = data.upper() # first letters
+        sign = list.group(2) # -/+
+        hours = int(list.group(3))
+        minutes = int(list.group(4) or 0)
+        offset = hours * 60 + minutes
+        if sign == '-':
+            offset = -offset
+        return label, offset
+        
+    val_h, val_min = map(int, val.split(':'))
+    offset = val_h * 60 + val_min
+    src_label, src_offset = parse_timezone(src)
+    target_label, target_offset = parse_timezone(target)
+    
+    total_offset_min = offset - src_offset + target_offset
+    # wrap in 24 hours
+    total_offset_min %= 24 * 60
+    
+    result_h = total_offset_min // 60
+    result_min = total_offset_min % 60
+    print(f'{val_h:02}:{val_min} {src_label} = {result_h:02}:{result_min:02} {target_label}')
+
+# ___________________________ Regex conversion handling ___________________________
+###
+# used for 1 to 1 conversions, like binary <-> number, or time-zones
+# keep dictionary with regex patterns for keys and what function they need for conversion instead normal values
+###
+timezone_regex = r'^[a-z]{2,4}[+-]\d{1,2}(:\d{2})?$'
+
+regex_dict = {
+    re.compile(timezone_regex): time_zone_convert
+}
+
+def choose_regex_convert(val, src, target):
+    for pattern, func in regex_dict.items():
+        if re.match(pattern, src) and re.match(pattern, target):
+            func(val, src, target)
 
 # ___________________________ Choose conversion ___________________________
 ###
@@ -163,16 +173,20 @@ def time_zone_convert(val, src, target):
 # both target and source need to be from same dictionary to work
 ###
 conversions = [
-    (length_units, simple_convert),
-    (weight_units, simple_convert),
-    (speed_units, simple_convert),
-    (time_units, simple_convert),
-    (to_celsius, temp_convert),
-    (timezones, time_zone_convert)
+    ('simple', length_units, simple_convert),
+    ('simple', weight_units, simple_convert),
+    ('simple', speed_units, simple_convert),
+    ('simple', time_units, simple_convert),
+    ('simple', to_celsius, temp_convert),
+    ('regex', regex_dict, choose_regex_convert)
 ]
 
-for unit_dict, conversion_type in conversions:
-    if source in unit_dict and target in unit_dict:
+for kind, unit_dict, conversion_type in conversions:
+    if kind == 'simple':
+        if source in unit_dict and target in unit_dict:
+            conversion_type(value, source, target)
+            break
+    elif kind == 'regex':
         conversion_type(value, source, target)
         break
 # else statement to 'for' not to 'if' (if 'for' loop finishes without calling 'break' (if statement is wrong) - execute 'else')
