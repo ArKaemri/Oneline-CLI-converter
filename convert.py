@@ -99,7 +99,7 @@ def simple_convert(val, src, target):
         if src in unit_dict:
             val = float(val)
             result = val * unit_dict[src] / unit_dict[target]
-            print(f'{val}{src} = {round(result, 2)}{target}')
+            print(f'{val}{src} = {round(result, 4)}{target}')
             break
 
 # ___________________________ Temperature conversion ___________________________
@@ -136,19 +136,24 @@ def time_zone_convert(val, src, target):
         if sign == '-':
             offset = -offset
         return label, offset
+    
+    label_match = r'^[a-z]{2,4}[+-]\d{1,2}'
+    if re.match(label_match, src) and re.match(label_match, target):
+        src_label, src_offset = parse_timezone(src)
+        target_label, target_offset = parse_timezone(target)
         
-    val_h, val_min = map(int, val.split(':'))
-    offset = val_h * 60 + val_min
-    src_label, src_offset = parse_timezone(src)
-    target_label, target_offset = parse_timezone(target)
+        val_h, val_min = map(int, val.split(':'))
+        offset = val_h * 60 + val_min
     
-    total_offset_min = offset - src_offset + target_offset
-    # wrap in 24 hours
-    total_offset_min %= 24 * 60
+        total_offset_min = offset - src_offset + target_offset
+        # wrap in 24 hours
+        total_offset_min %= 24 * 60
     
-    result_h = total_offset_min // 60
-    result_min = total_offset_min % 60
-    print(f'{val_h:02}:{val_min} {src_label} = {result_h:02}:{result_min:02} {target_label}')
+        result_h = total_offset_min // 60
+        result_min = total_offset_min % 60
+        print(f'{val_h:02}:{val_min:02} {src_label} = {result_h:02}:{result_min:02} {target_label}')
+        return True
+    return False
 
 # ___________________________ Regex conversion handling ___________________________
 ###
@@ -168,6 +173,8 @@ def choose_regex_convert(val, src, target):
     for pattern, func in regex_dict.items():
         if re.match(pattern, src) and re.match(pattern, target):
             func(val, src, target)
+            return True
+    return False
 
 # ___________________________ Choose conversion ___________________________
 ###
@@ -190,8 +197,8 @@ for kind, unit_dict, conversion_type in conversions:
             conversion_type(value, source, target)
             break
     elif kind == 'regex':
-        conversion_type(value, source, target)
-        break
+        if conversion_type(value, source, target):
+            break
 # else statement to 'for' not to 'if' (if 'for' loop finishes without calling 'break' (if statement is wrong) - execute 'else')
 else:
     print(f'Cannot convert {source} to {target}')
@@ -202,4 +209,4 @@ else:
     print('Speed: ' + ', '.join(speed_units))
     temp_visual = [key.upper() for key, _ in to_celsius.items()]
     print('Temperature: ' + ', '.join(temp_visual))
-    print('Timezones: ***-11 to ***+12')
+    print('Timezones: EEST-3 or UTC+4:30 etc.')
