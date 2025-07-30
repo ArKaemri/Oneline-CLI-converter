@@ -5,7 +5,7 @@ import re
 ###
 # dictionaries keep all values and how to convert them to 'base'
 # example: cm to m, km to m, lbs to g, kg to g
-# then base result converted to desired units (no need for if-else/choice hell)
+# then base result converted to desired units
 ###
 length_units = {
     'pm': 0.000000000001,
@@ -63,7 +63,7 @@ time_units = {
 to_celsius = {
     'c': lambda x: x, # base
     'k': lambda x: x - 273.15,
-    'f': lambda x: x - 32 * (5/9)
+    'f': lambda x: (x - 32) * (5/9)
 }
 
 from_celsius = {
@@ -88,13 +88,13 @@ source = argv[1]
 target = argv[2]
 
 # ___________________________ Simple conversionts ___________________________
+# --------------- weight, length, speed, time
+def simple_convert(val, src, target): 
 ###
 # 1) convert units to base (multiply value by dictionary value)
 # 2) divide result from desired units dictionary value
 # example: 12 cm km -> 12 * 0.01 (cm:0.01) -> 0.12 / 1000 (km:1000) -> 0.00012 km
 ###
-# --------------- weight, length, speed, time
-def simple_convert(val, src, target): 
     for unit_dict in [length_units, weight_units, speed_units, time_units]:
         if src in unit_dict:
             val = float(val)
@@ -115,13 +115,13 @@ def temp_convert(val, src, target):
     # temperature units written in capital letters
     src = src.upper()
     target = target.upper()
-    print(f'{val}{src} = {result}{target}')
+    print(f'{val}{src} = {round(result, 2)}{target}')
 
 # ___________________________ Time zone conversion ___________________________
 def time_zone_convert(val, src, target):
 ###
 # 1) divide input into 3 parts (symbolic - UTC or EST etc., symbol - +/-, amount - 3 or 4:30 etc.)
-# 2) convert amount's and value to time (without seconds)
+# 2) convert amount's and value to time using manual methods
 # 3) from value subtract source amount and add target amount
 # 4) output starting symbolic (upper before outputing) + result time 
 ###
@@ -130,8 +130,8 @@ def time_zone_convert(val, src, target):
         list = re.match(r'^([a-z]{2,4})([+-])(\d{1,2})(?::(\d{2}))?$', data)
         label = data.upper() # first letters
         sign = list.group(2) # -/+
-        hours = int(list.group(3))
-        minutes = int(list.group(4) or 0)
+        hours = int(list.group(3)) # numbers before ':'
+        minutes = int(list.group(4) or 0) # numbers after ':' if exist
         offset = hours * 60 + minutes
         if sign == '-':
             offset = -offset
@@ -154,9 +154,12 @@ def time_zone_convert(val, src, target):
 ###
 # used for 1 to 1 conversions, like binary <-> number, or time-zones
 # keep dictionary with regex patterns for keys and what function they need for conversion instead normal values
+# call function directly based on key
 ###
+# matches
 timezone_regex = r'^[a-z]{2,4}[+-]\d{1,2}(:\d{2})?$'
 
+# regex pattern dictionary
 regex_dict = {
     re.compile(timezone_regex): time_zone_convert
 }
