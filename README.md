@@ -6,17 +6,17 @@ In CLI (terminal) input the .py path and info that you have and immediately get 
 > python convert.py value unit_have unit_want
 1) have python on main system
 2) clone repo or download zip and extract .py file
-3) use python (in Windows 'python', in Linux 'python3')
+3) use python (in Windows 'py', in Linux 'python3')
 4) input path to .py file (or just .py file if in same directory)
 5) input value that you have
 6) what units that value is
 7) the units you wish to convert to
 ### Examples (assuming .py in the current directory)
 - length
-  - python convert.py 12 cm m
+  - py convert.py 12 cm m
   - 12cm = 0.12m
 - timezone
-  - python convert.py 12:00 UTC-3 GMT+3:45
+  - python3 convert.py 12:00 UTC-3 GMT+3:45
   - 12:00 UTC-3 = 18:45 DMT+3:45
 ### Notes
 Currently code supports: 
