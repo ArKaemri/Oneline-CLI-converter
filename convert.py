@@ -105,6 +105,7 @@ time_zones = {
     ('VUT', 'SBT', 'PONT', 'SRET'): 11,
     ('AoE', 'TVT', 'FJT', 'NZST', 'GILT', 'WAKT'): 12,
 }
+
 # ___________________________ Read CLI data ___________________________
 ###
 # get data from CLI (case insensetive)
@@ -121,7 +122,7 @@ source = argv[1]
 target = argv[2]
 
 # ___________________________ Helper functions
-# get keys from tuples
+# get factors from dictionaries
 def get_factor(unit_dict, src, target):
     for key, factor in unit_dict.items():
         # if key is a string or tuple element
@@ -153,8 +154,10 @@ def temp_convert(val, src, target, unit_dict):
 # 2) convert Celsius to desired units
 # example: 12 C K -> 12 (celsius is base, - if other) -> 12 + 273.15 -> 285.15
 ###
+    # get conversion lambda functions
     src_factor, _ = get_factor(to_celsius, src, target)
     _, target_factor = get_factor(from_celsius, src, target)
+    # calculate
     val = float(val)
     celsius = src_factor(val) 
     result = target_factor(celsius)
@@ -247,11 +250,13 @@ for kind, unit_dict, conversion_type in conversions:
     if kind == 'simple':
         # go through all keys and check if both src and target in dictionaries
         for key in unit_dict:
+            # if keys is tuple, flatten and add to list
             if isinstance(key, tuple):
                 all_key.extend(key)
+            # if key is a string, add to list
             else:
                 all_key.append(key)
-        # check if source and target are in same dictionary
+        # save source and target dicts to see if keys in same dict
         if source in all_key:
             source_dict = unit_dict
         if target in all_key:
