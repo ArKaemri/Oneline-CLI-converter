@@ -4,33 +4,34 @@ import re
 # ___________________________ Simple dictionaries ___________________________
 ###
 # dictionaries keep all values and how to convert them to 'base'
-# example: cm to m, km to m, lbs to g, kg to g
+# example: cm to m, kilometer to meter, lbs to gram, kg to g
 # then base result converted to desired units
+# P.S. - key can be a tuple to accept full name or shortened (m or meter) OR multiple same value objects (timezones)
 ###
 length_units = {
-    'pm': 0.000000000001,
-    'nm': 0.000000001,
-    'um': 0.000001,
-    'mm': 0.001,
-    'cm': 0.01,
-    'm': 1, # base
-    'km': 1000,
+    ('pm', 'picometer'): 0.000000000001,
+    ('nm', 'nanometer'): 0.000000001,
+    ('um', 'micrometer'): 0.000001,
+    ('mm', 'millimeter'): 0.001,
+    ('cm', 'centimeter'): 0.01,
+    ('m', 'meter'): 1, # base
+    ('km', 'kilometer'): 1000,
     'inch': 0.0254,
-    'ft': 0.3048,
+    ('ft', 'feet'): 0.3048,
     'yard': 0.9144,
     'mile': 1609.344
 }
 
 weight_units = {
-    'pg': 0.000000000001,
-    'ng': 0.000000001,
-    'ug': 0.000001,
-    'mg': 0.001,
-    'g': 1, # base
-    'kg': 1000,
+    ('pg', 'picogram'): 0.000000000001,
+    ('ng', 'nanogram'): 0.000000001,
+    ('ug', 'microgram'): 0.000001,
+    ('mg', 'miligram'): 0.001,
+    ('g', 'gram'): 1, # base
+    ('kg', 'kilogram'): 1000,
     'ton': 1000000,
-    'oz': 28.34952,
-    'lbs': 453.5924
+    ('oz', 'ounce'): 28.34952,
+    ('lbs', 'pound'): 453.5924
 }
 
 speed_units = {
@@ -47,13 +48,13 @@ speed_units = {
 }
 
 time_units = {
-    'ps': 0.000000000001,
-    'ns': 0.000000001,
-    'us': 0.000001,
-    'ms': 0.001,
-    's': 1, # base
-    'min': 60,
-    'h': 3600,
+    ('ps', 'picosecond'): 0.000000000001,
+    ('ns', 'nanosecond'): 0.000000001,
+    ('us', 'microsecond'): 0.000001,
+    ('ms', 'millisecond'): 0.001,
+    ('s', 'second'): 1, # base
+    ('min', 'minute'): 60,
+    ('h', 'hour'): 3600,
     'day': 86400,
     'week': 604800,
     'month': 2629800,
@@ -61,21 +62,53 @@ time_units = {
 }
 
 to_celsius = {
-    'c': lambda x: x, # base
-    'k': lambda x: x - 273.15,
-    'f': lambda x: (x - 32) * (5/9)
+    ('c', 'celsius'): lambda x: x, # base
+    ('k', 'kelvin'): lambda x: x - 273.15,
+    ('f', 'fahrenheit'): lambda x: (x - 32) * (5/9)
 }
 
 from_celsius = {
-    'c': lambda x: x, # base
-    'k': lambda x: x + 273.15,
-    'f': lambda x: x * (9/5) + 32
+    ('c', 'celsius'): lambda x: x, # base
+    ('k', 'kelvin'): lambda x: x + 273.15,
+    ('f', 'fahrenheit'): lambda x: x * (9/5) + 32
 }
 
+time_zones = {
+    ('NUT', 'WST', 'TOT', 'SST', 'TKT'): -11,
+    ('HST', 'LINT', 'TAHT', 'CKT'): -10,
+    'HDT': -9,
+    ('AKDT', 'PST'): -8,
+    ('MST', 'PDT'): -7,
+    ('GALT', 'CST', 'MDT', 'EAST'): -6,
+    ('PET', 'ECT', 'COT', 'EST', 'CDT'): -5,
+    ('CLT', 'BOT', 'AMT', 'GYT', 'AST', 'VET', 'EDT'): -4,
+    ('FKST', 'CLST', 'ART', 'PYT', 'BRT', 'GFT', 'SRT', 'ADT'): -3,
+    'NDT': -2.30,
+    'GST': -2,
+    ('WGST', 'CVT'): -1,
+    'UTC': 0, # base
+    ('GMT', 'AZOST'): 0,
+    ('WEST', 'CET', 'IST', 'BST', 'WAT'): 1,
+    ('SAST', 'CAT', 'CEST', 'EET'): 2,
+    ('EAT', 'AST', 'EEST', 'IDT', 'MSK'): 3,
+    'IRST': 3.30,
+    ('RET', 'MUT', 'SCT', 'GST', 'AMT', 'AZT', 'GET', 'SAMT'): 4,
+    'AFT': 4.30,
+    ('TFT', 'MVT', 'PKT', 'TJT', 'UZT', 'YEKT', 'ORAT', 'TMT'): 5,
+    ('IOT', 'BST', 'BTT', 'KGT', 'OMST'): 6,
+    'MMT': 6.30,
+    ('ICT', 'HOWT', 'KRAT', 'NOVT', 'WIB'): 7,
+    ('AWST', 'WITA', 'BNT', 'PHST', 'CST', 'HKT', 'ULAT', 'IRKT'): 8,
+    ('WIT', 'JST', 'KST', 'YAKT', ): 9,
+    'ACST': 9.30,
+    ('AEST', 'PGT', 'ChST', 'VLAT'): 10,
+    ('VUT', 'SBT', 'PONT', 'SRET'): 11,
+    ('AoE', 'TVT', 'FJT', 'NZST', 'GILT', 'WAKT'): 12,
+}
 # ___________________________ Read CLI data ___________________________
 ###
-# get data from CLI
-# example: > convert.py 12 cm m -> [12, 'cm', 'm']
+# get data from CLI (case insensetive)
+# example: > convert.py 12 Cm M -> [12, 'cm', 'm']
 ###
 argv = sys.argv[1:]
 if len(argv) != 3:
@@ -87,34 +120,47 @@ value = argv[0]
 source = argv[1]
 target = argv[2]
 
+# ___________________________ Helper functions
+# get keys from tuples
+def get_factor(unit_dict, src, target):
+    for key, factor in unit_dict.items():
+        # if key is a string or tuple element
+        if (isinstance(key, tuple) and src in key) or key == src:
+            src_factor = factor
+        if (isinstance(key, tuple) and target in key) or key == target:
+            target_factor = factor
+    return src_factor, target_factor
+
 # ___________________________ Simple conversionts ___________________________
 # --------------- weight, length, speed, time
-def simple_convert(val, src, target): 
+def simple_convert(val, src, target, unit_dict): 
 ###
 # 1) convert units to base (multiply value by dictionary value)
 # 2) divide result from desired units dictionary value
 # example: 12 cm km -> 12 * 0.01 (cm:0.01) -> 0.12 / 1000 (km:1000) -> 0.00012 km
 ###
-    for unit_dict in [length_units, weight_units, speed_units, time_units]:
-        if src in unit_dict:
-            val = float(val)
-            result = val * unit_dict[src] / unit_dict[target]
-            print(f'{val}{src} = {round(result, 4)}{target}')
-            break
+    src_factor, target_factor = get_factor(unit_dict, src, target)
+    # calculation
+    if src_factor is not None:
+        val = float(val)
+        result = val * src_factor / target_factor
+        print(f'{val}{src} = {round(result, 4)}{target}')
 
 # ___________________________ Temperature conversion ___________________________
-def temp_convert(val, src, target):
+def temp_convert(val, src, target, unit_dict):
 ###
 # 1) convert temperature to Celsius
 # 2) convert Celsius to desired units
 # example: 12 C K -> 12 (celsius is base, - if other) -> 12 + 273.15 -> 285.15
 ###
+    src_factor, _ = get_factor(to_celsius, src, target)
+    _, target_factor = get_factor(from_celsius, src, target)
     val = float(val)
-    celsius = to_celsius[src](val) 
-    result = from_celsius[target](celsius)
+    celsius = src_factor(val) 
+    result = target_factor(celsius)
     # temperature units written in capital letters
-    src = src.upper()
-    target = target.upper()
+    src = src.capitalize()
+    target = target.capitalize()
     print(f'{val}{src} = {round(result, 2)}{target}')
 
 # ___________________________ Time zone conversion ___________________________
@@ -136,7 +182,7 @@ def time_zone_convert(val, src, target):
         if sign == '-':
             offset = -offset
         return label, offset
-    
+
     label_match = r'^[a-z]{2,4}[+-]\d{1,2}'
     if re.match(label_match, src) and re.match(label_match, target):
         src_label, src_offset = parse_timezone(src)
@@ -162,7 +208,7 @@ def time_zone_convert(val, src, target):
 # call function directly based on key
 ###
 # matches
-timezone_regex = r'^[a-z]{2,4}[+-]\d{1,2}(:\d{2})?$'
+timezone_regex = r'^[a-z]{2,4}(?:[+-]\d{1,2}(?::\d{2})?)?$' # find letters, letters + hours, letters + hours + minutes
 
 # regex pattern dictionary
 regex_dict = {
@@ -191,22 +237,35 @@ conversions = [
     ('regex', regex_dict, choose_regex_convert)
 ]
 
+done = False # check if conversion done
+# check for same directory keys
+all_key = []
+source_dict = None
+target_dict = None
+
 for kind, unit_dict, conversion_type in conversions:
     if kind == 'simple':
-        if source in unit_dict and target in unit_dict:
-            conversion_type(value, source, target)
+        # go through all keys and check if both src and target in dictionaries
+        for key in unit_dict:
+            if isinstance(key, tuple):
+                all_key.extend(key)
+            else:
+                all_key.append(key)
+        # check if source and target are in same dictionary
+        if source in all_key:
+            source_dict = unit_dict
+        if target in all_key:
+            target_dict = unit_dict
+        # run conversion only if both keys are in same directory
+        if source_dict == target_dict and source_dict is not None:
+            conversion_type(value, source, target, source_dict)
+            done = True
             break
     elif kind == 'regex':
         if conversion_type(value, source, target):
+            done = True
             break
-# else statement to 'for' not to 'if' (if 'for' loop finishes without calling 'break' (if statement is wrong) - execute 'else')
+    if done: 
+        break
 else:
     print(f'Cannot convert {source} to {target}')
-    print('Possible conversions:')
-    print('Length: ' + ', '.join(length_units))
-    print('Weight: ' + ', '.join(weight_units))
-    print('Time: ' + ', '.join(time_units))
-    print('Speed: ' + ', '.join(speed_units))
-    temp_visual = [key.upper() for key, _ in to_celsius.items()]
-    print('Temperature: ' + ', '.join(temp_visual))
-    print('Timezones: EEST-3 or UTC+4:30 etc.')
