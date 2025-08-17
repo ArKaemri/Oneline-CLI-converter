@@ -112,9 +112,8 @@ time_zones = {
 ###
 argv = sys.argv[1:]
 if len(argv) != 3:
-    print('Wrong input, example - python convert.py 12 cm m\n')
-    print('P.S. use singular unit name - inch not inches')
-    sys.exit()
+    print('Wrong input, example - python convert.py 12 cm m')
+    sys.exit(1)
 argv = [x.lower() for x in argv]
 value = argv[0]
 source = argv[1]
@@ -183,11 +182,16 @@ def time_zone_convert(val, src, target):
 ###
     match = r'^([A-Z]{3,5})(?:([+-])(\d{1,2})(?::(\d{2}))?)?$'
     src_offset = target_offset = None
+    src = src.upper()
+    target = target.upper()
     
     # check if value correct format
     val_match = r'\d{1,2}:\d{1,2}$'
     if re.match(val_match, value) is None:
         print(f'For timezone conversion input value in 00:00 format')
+        sys.exit(1)
+    elif re.match(match, src) is None or re.match(match, target) is None:
+        print(f'Unknown timezone')
         sys.exit(1)
     
     def parse_timezone(data):
@@ -200,8 +204,6 @@ def time_zone_convert(val, src, target):
             offset = -offset
         return offset
     
-    src = src.upper()
-    target = target.upper()
     list_src = re.match(match, src)
     list_target = re.match(match, target)
     # check if offset symbol exist, if doesn't check dictionary for offset
@@ -264,13 +266,24 @@ conversions = [
     ('regex', regex_dict, choose_regex_convert)
 ]
 
+###
+# loop through conversion dictionary to find if conversion simple or regex based
+# if conversion simple: 
+#   - get all keys from dictionary (flatten the dict)
+#   - if source and target units are in found keys, save the dictionary
+#   - if target and source values were in same dictionary, use conversion
+#   - if only 1 value in keys, 1 value will be None and conversion won't happen, on new
+#     loop, there will be new dictionary and both values set back to None, so both will 
+#     never be not None on different source and target values
+# else call regex function
+# if neither happened, keys are either from different dictionaries or wrong units provided, print output
+###
 done = False # check if conversion done
-# check for same directory keys
-all_key = []
-source_dict = None
-target_dict = None
-
 for kind, unit_dict, conversion_type in conversions:
+    # check for same directory keys
+    all_key = []
+    source_dict = None
+    target_dict = None
     if kind == 'simple':
         # go through all keys and check if both src and target in dictionaries
         for key in unit_dict:
@@ -286,7 +299,7 @@ for kind, unit_dict, conversion_type in conversions:
         if target in all_key:
             target_dict = unit_dict
         # run conversion only if both keys are in same directory
-        if source_dict == target_dict and source_dict is not None:
+        if source_dict is not None and target_dict is not None:
             conversion_type(value, source, target, source_dict)
             done = True
             break
