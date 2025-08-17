@@ -175,6 +175,12 @@ def temp_convert(val, src, target, unit_dict):
 
 # ___________________________ Time zone conversion ___________________________
 def time_zone_convert(val, src, target):
+###
+# 1) Split input into first letters, symbol and time
+# 2) If input only has letters, check dictionary for offset
+# 3) If input has offset, manually convert into time (disregard letters)
+# 4) Subtract source and add target offsets to given value and keep result in 24 hours
+###
     match = r'^([A-Z]{3,5})(?:([+-])(\d{1,2})(?::(\d{2}))?)?$'
     src_offset = target_offset = None
     
