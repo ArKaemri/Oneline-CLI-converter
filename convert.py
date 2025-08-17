@@ -83,7 +83,7 @@ time_zones = {
     ('PET', 'ECT', 'COT', 'EST', 'CDT'): -5,
     ('CLT', 'BOT', 'AMT', 'GYT', 'AST', 'VET', 'EDT'): -4,
     ('FKST', 'CLST', 'ART', 'PYT', 'BRT', 'GFT', 'SRT', 'ADT'): -3,
-    'NDT': -2.30,
+    'NDT': -2.5,
     'GST': -2,
     ('WGST', 'CVT'): -1,
     'UTC': 0, # base
@@ -91,16 +91,16 @@ time_zones = {
     ('WEST', 'CET', 'IST', 'BST', 'WAT'): 1,
     ('SAST', 'CAT', 'CEST', 'EET'): 2,
     ('EAT', 'AST', 'EEST', 'IDT', 'MSK'): 3,
-    'IRST': 3.30,
+    'IRST': 3.5,
     ('RET', 'MUT', 'SCT', 'GST', 'AMT', 'AZT', 'GET', 'SAMT'): 4,
-    'AFT': 4.30,
+    'AFT': 4.5,
     ('TFT', 'MVT', 'PKT', 'TJT', 'UZT', 'YEKT', 'ORAT', 'TMT'): 5,
     ('IOT', 'BST', 'BTT', 'KGT', 'OMST'): 6,
-    'MMT': 6.30,
+    'MMT': 6.5,
     ('ICT', 'HOWT', 'KRAT', 'NOVT', 'WIB'): 7,
     ('AWST', 'WITA', 'BNT', 'PHST', 'CST', 'HKT', 'ULAT', 'IRKT'): 8,
     ('WIT', 'JST', 'KST', 'YAKT', ): 9,
-    'ACST': 9.30,
+    'ACST': 9.5,
     ('AEST', 'PGT', 'ChST', 'VLAT'): 10,
     ('VUT', 'SBT', 'PONT', 'SRET'): 11,
     ('AoE', 'TVT', 'FJT', 'NZST', 'GILT', 'WAKT'): 12,
@@ -124,12 +124,20 @@ target = argv[2]
 # ___________________________ Helper functions
 # get factors from dictionaries
 def get_factor(unit_dict, src, target):
+    src_factor = target_factor = None
     for key, factor in unit_dict.items():
         # if key is a string or tuple element
         if (isinstance(key, tuple) and src in key) or key == src:
             src_factor = factor
         if (isinstance(key, tuple) and target in key) or key == target:
             target_factor = factor
+    # stop converter if unknown key found
+    if src_factor is None:
+        print(f'Unknown source factor {src}')
+        sys.exit(1)
+    if target_factor is None:
+        print(f'Unknown target factor {target}')
+        sys.exit(1)
     return src_factor, target_factor
 
 # ___________________________ Simple conversionts ___________________________
@@ -168,39 +176,50 @@ def temp_convert(val, src, target, unit_dict):
 
 # ___________________________ Time zone conversion ___________________________
 def time_zone_convert(val, src, target):
-###
-# 1) divide input into 3 parts (symbolic - UTC or EST etc., symbol - +/-, amount - 3 or 4:30 etc.)
-# 2) convert amount's and value to time using manual methods
-# 3) from value subtract source amount and add target amount
-# 4) output starting symbolic (upper before outputing) + result time 
-###
+    match = r'^([A-Z]{3,5})(?:([+-])(\d{1,2})(?::(\d{2}))?)?$'
+    src_offset = target_offset = None
+    
+    # check if value correct format
+    val_match = r'\d{1,2}:\d{1,2}$'
+    if re.match(val_match, value) is None:
+        print(f'For timezone conversion input value in 00:00 format')
+        sys.exit(1)
+    
     def parse_timezone(data):
-        # get values from timezone input
-        list = re.match(r'^([a-z]{2,4})([+-])(\d{1,2})(?::(\d{2}))?$', data)
-        label = data.upper() # first letters
-        sign = list.group(2) # -/+
-        hours = int(list.group(3)) # numbers before ':'
-        minutes = int(list.group(4) or 0) # numbers after ':' if exist
+        # get values from timezone input manually
+        sign = data.group(2) # -/+
+        hours = int(data.group(3)) # numbers before ':'
+        minutes = int(data.group(4) or 0) # numbers after ':' if exist
         offset = hours * 60 + minutes
         if sign == '-':
             offset = -offset
-        return label, offset
-
-    label_match = r'^[a-z]{2,4}[+-]\d{1,2}'
-    if re.match(label_match, src) and re.match(label_match, target):
-        src_label, src_offset = parse_timezone(src)
-        target_label, target_offset = parse_timezone(target)
-        
+        return offset
+    
+    src = src.upper()
+    target = target.upper()
+    list_src = re.match(match, src)
+    list_target = re.match(match, target)
+    # check if offset symbol exist, if doesn't check dictionary for offset
+    if list_src.group(2) is None: 
+        source_factor, _ = get_factor(time_zones, src, 'UTC') # parse default value to not get error (for not used result)
+        src_offset = int(source_factor * 60)
+    # if does divide string manually
+    else:
+        src_offset = parse_timezone(list_src)
+    if list_target.group(2) is None:
+        _, target_factor = get_factor(time_zones, 'UTC', target) 
+        target_offset = int(target_factor * 60)
+    else:
+        target_offset = parse_timezone(list_target)
+    # check if both values are found and convert
+    if src_offset is not None and target_offset is not None:
         val_h, val_min = map(int, val.split(':'))
         offset = val_h * 60 + val_min
-    
         total_offset_min = offset - src_offset + target_offset
-        # wrap in 24 hours
-        total_offset_min %= 24 * 60
-    
+        total_offset_min %= 24 * 60 # wrap in 24 hours
         result_h = total_offset_min // 60
         result_min = total_offset_min % 60
-        print(f'{val_h:02}:{val_min:02} {src_label} = {result_h:02}:{result_min:02} {target_label}')
+        print(f'{val_h:02}:{val_min:02} {src} = {result_h:02}:{result_min:02} {target}')
         return True
     return False
 
@@ -211,7 +230,7 @@ def time_zone_convert(val, src, target):
 # call function directly based on key
 ###
 # matches
-timezone_regex = r'^[a-z]{2,4}(?:[+-]\d{1,2}(?::\d{2})?)?$' # find letters, letters + hours, letters + hours + minutes
+timezone_regex = r'^[a-z]{3,5}(?:[+-]\d{1,2}(?::\d{2})?)?$' # find letters, letters + hours, letters + hours + minutes
 
 # regex pattern dictionary
 regex_dict = {
