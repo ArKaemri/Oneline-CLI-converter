@@ -7,7 +7,7 @@ In CLI (terminal) input the .py path and info that you have and get answer:
 1) have python on main system
 2) clone repo or download zip and extract .py file
 3) use python (in Windows 'py', in Linux 'python3')
-4) input path to .py file (or just .py file if in same directory, if file on desktop open CLI and input convert.py as path)
+4) input path to convert.py file (or just convert.py after py/python3 if in same directory)
 5) input value that you have
 6) what units that value is
 7) the units you wish to convert to
@@ -20,12 +20,13 @@ In CLI (terminal) input the .py path and info that you have and get answer:
   - 12:00 ECT = 20:00 UTC+3
 ### Notes
 - Conversions support unit name and symbol (m to kilometer, s to min, feet to kilometer)
-- Time zone conversions support abreviation or offset (UTC+3 to EST, EST to WST, CLT-4 to SAST+2) (some abreviations are same in multiple cases, so only 1 works for now: CST - china, AST - Saudi Arabia, AMT - Armenia, GST - Arabia Emirates) 
+- Time zone conversions support abreviation, offset or country name (UTC+3 to EST, EST to WST, CLT-4 to London)
+- Some timezone abreviations have multiple meanings (for example CST is China +8 hours and Mexico -6 hours) so conversion will show every posibility if using just abreviation and not city/manual offset
 - Time zone conversions doesn't show date (if time goes after 23:59 or before 00:01, no notice of different day will be shown)
-- Possible conversions: (names are only accepted as singular)
+- Possible conversions: (names are only accepted as singular, except 'feet')
   - length (pm, nm, um, mm, cm, m, km, inch, ft, yard, mile) (works with names like: meter, feet...)
   - weight (pg, ng, ug, mg, g, kg, ton, oz, lbs) (works with name: gram, ounce)
   - time (ps, ns, us, ms, s, min, h, day, week, month, year) (works with names: second, minute)
   - speed (cm/s, m/s, m/min, km/s, km/min, km/h, ips, fps, mph, knot)
-  - time zones (no offset - ECT, offset - UTC+3)
+  - time zones (no offset - ECT, offset - UTC+3, country - Germany)
   - temperature (K, C, F) (works with name: celsius, kelvin)
