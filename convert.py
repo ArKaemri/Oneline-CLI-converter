@@ -1,6 +1,8 @@
 # ___________________________ Dependencies ___________________________
 import sys
 import re
+import pytz
+from datetime import datetime
 # ___________________________ Simple dictionaries ___________________________
 ###
 # dictionaries keep all values and how to convert them to 'base'
@@ -79,11 +81,12 @@ time_zones = {
     'HDT': -9,
     ('AKDT', 'PST'): -8,
     ('MST', 'PDT'): -7,
-    ('GALT', 'MDT', 'EAST'): -6,
+    ('GALT', 'MDT', 'EAST', 'CST'): -6,
     ('PET', 'ECT', 'COT', 'EST', 'CDT'): -5,
-    ('CLT', 'BOT', 'GYT', 'VET', 'EDT'): -4,
+    ('CLT', 'BOT', 'GYT', 'VET', 'EDT', 'AST', 'AMT'): -4,
     ('FKST', 'CLST', 'ART', 'PYT', 'BRT', 'GFT', 'SRT', 'ADT'): -3,
     'NDT': -2.5,
+    'GST': -2,
     ('WGST', 'CVT'): -1,
     'UTC': 0, # base
     ('GMT', 'AZOST'): 0,
@@ -105,6 +108,7 @@ time_zones = {
     ('AoE', 'TVT', 'FJT', 'NZST', 'GILT', 'WAKT'): 12,
 }
 
+all_zones = pytz.all_timezones
 # ___________________________ Read CLI data ___________________________
 ###
 # get data from CLI (case insensetive)
@@ -122,6 +126,10 @@ target = argv[2]
 # ___________________________ Helper functions
 # get factors from dictionaries
 def get_factor(unit_dict, src, target):
+###
+# check if key is in dictionary and it is standalone or part of a tuple
+# if it is, return value of that key
+###
     src_factor = target_factor = None
     for key, factor in unit_dict.items():
         # if key is a string or tuple element
@@ -138,6 +146,65 @@ def get_factor(unit_dict, src, target):
         sys.exit(1)
     return src_factor, target_factor
 
+def get_timezone_offset(type):
+###
+# check if timezone matches single word (city) or timezone regex
+# if so, check which type:
+#                           standalone abreviation (CST)
+#                           manual offset (PST-8)
+#                           city name (London)
+# after finding the type, extract the offset in minutes compared to UTC-0
+###
+    city_regex = r'^[a-z]+$'
+    offset_regex = r'^([a-z]{3,5})(?:([+-])(\d{1,2})(?::(\d{2}))?)?$'
+    output  = re.match(offset_regex, type)
+    # get city offset by city
+    if re.match(city_regex, type):
+        # convert city into IANA format
+        city = type.capitalize()
+        iana = [x for x in all_zones if city in x.split('/')]
+        # if list not empty (found the IANA format)
+        if iana:
+            # create timezone object
+            zone = pytz.timezone(iana[0])
+            timezone = datetime.now(zone)
+            # get the offset from UTC-0 and split into h/min
+            time = str(timezone.utcoffset()).split(':')
+            # convert to minutes
+            offset = int(time[0]) * 60 + int(time[1])
+            return city, offset 
+    # if city or abreviation regex didn't found anything, break the conversion
+    if output is None:
+        print(f'unknown timezone {type}')
+        sys.exit(1)
+    # go through dict, save offset list
+    if output.group(2) is None:
+        offsets = {}
+        type = type.upper()
+        for zone, offset in time_zones.items():
+            # if key is tuple
+            if isinstance(zone, tuple):
+                for z in zone:
+                    if type == z:
+                        offsets.setdefault(z, []).append(offset)
+            else:
+                if type == zone:
+                    offsets.setdefault(z, []).append(offset)
+        # convert each offset to minutes
+        offsets = {key: [v * 60 for v in value] for key, value in offsets.items()}
+        key, value = next(iter(offsets.items()))
+        return key, value
+    # manually extract offset
+    elif output.group(2) is not None:
+        zone = output.group(1).upper()
+        sign = output.group(2)
+        h = int(output.group(3))
+        min = int(output.group(4) or 0)
+        offset = h * 60 + min
+        if sign == '-':
+            offset = -offset
+        return zone, offset
+    
 # ___________________________ Simple conversionts ___________________________
 # --------------- weight, length, speed, time
 def simple_convert(val, src, target, unit_dict): 
@@ -151,7 +218,7 @@ def simple_convert(val, src, target, unit_dict):
     if src_factor is not None:
         val = float(val)
         result = val * src_factor / target_factor
-        print(f'{val}{src} = {round(result, 4)}{target}')
+        print(f'{val} {src} = {round(result, 4)} {target}')
 
 # ___________________________ Temperature conversion ___________________________
 def temp_convert(val, src, target, unit_dict):
@@ -170,83 +237,72 @@ def temp_convert(val, src, target, unit_dict):
     # temperature units written in capital letters
     src = src.capitalize()
     target = target.capitalize()
-    print(f'{val}{src} = {round(result, 2)}{target}')
+    print(f'{val} {src} = {round(result, 2)} {target}')
 
 # ___________________________ Time zone conversion ___________________________
 def time_zone_convert(val, src, target):
 ###
-# 1) Split input into first letters, symbol and time
-# 2) If input only has letters, check dictionary for offset
-# 3) If input has offset, manually convert into time (disregard letters)
-# 4) Subtract source and add target offsets to given value and keep result in 24 hours
+# get offsets of timezones compared to UTC-0
+# subtract source offset to value, then add target
 ###
-    match = r'^([A-Z]{3,5})(?:([+-])(\d{1,2})(?::(\d{2}))?)?$'
     src_offset = target_offset = None
-    src = src.upper()
-    target = target.upper()
-    
-    # check if value correct format
-    val_match = r'\d{1,2}:\d{1,2}$'
-    if re.match(val_match, value) is None:
+    # check if value format is correct (time input)
+    val_match = r'^\d{1,2}:\d{1,2}$'
+    if re.match(val_match, val) is None:
         print(f'For timezone conversion input value in 00:00 format')
         sys.exit(1)
-    elif re.match(match, src) is None or re.match(match, target) is None:
-        print(f'Unknown timezone')
-        sys.exit(1)
+    # get offsets
+    src_zone, src_offset = get_timezone_offset(src)
+    target_zone, target_offset = get_timezone_offset(target)
     
-    def parse_timezone(data):
-        # get values from timezone input manually
-        sign = data.group(2) # -/+
-        hours = int(data.group(3)) # numbers before ':'
-        minutes = int(data.group(4) or 0) # numbers after ':' if exist
-        offset = hours * 60 + minutes
-        if sign == '-':
-            offset = -offset
-        return offset
-    
-    list_src = re.match(match, src)
-    list_target = re.match(match, target)
-    # check if offset symbol exist, if doesn't check dictionary for offset
-    if list_src.group(2) is None: 
-        source_factor, _ = get_factor(time_zones, src, 'UTC') # parse default value to not get error (for not used result)
-        src_offset = int(source_factor * 60)
-    # if does divide string manually
-    else:
-        src_offset = parse_timezone(list_src)
-    if list_target.group(2) is None:
-        _, target_factor = get_factor(time_zones, 'UTC', target) 
-        target_offset = int(target_factor * 60)
-    else:
-        target_offset = parse_timezone(list_target)
-    # check if both values are found and convert
-    if src_offset is not None and target_offset is not None:
+    # convert time from source zone to target zone
+    def calculate_time(offset_src, offset_target):    
         val_h, val_min = map(int, val.split(':'))
         offset = val_h * 60 + val_min
-        total_offset_min = offset - src_offset + target_offset
-        total_offset_min %= 24 * 60 # wrap in 24 hours
+        total_offset_min = offset - offset_src + offset_target
+        total_offset_min %= 24 * 60
         result_h = total_offset_min // 60
         result_min = total_offset_min % 60
-        print(f'{val_h:02}:{val_min:02} {src} = {result_h:02}:{result_min:02} {target}')
-        return True
-    return False
+        print(f'{val_h:02}:{val_min:02} {src_zone} = {result_h:02}:{result_min:02} {target_zone}\n')
+
+    # if src or target has list of offsets, iterate the list
+    if isinstance(target_offset, list) and isinstance(src_offset, list):
+        for offset_s in src_offset:
+            for offset_t in target_offset:
+                calculate_time(offset_s, offset_t)
+    elif isinstance(src_offset, list):
+        for offset in src_offset:
+            calculate_time(offset, target_offset)
+    elif isinstance(target_offset, list):
+        for offset in target_offset:
+            calculate_time(src_offset, offset)
+    else:
+        calculate_time(src_offset, target_offset)
+
 
 # ___________________________ Regex conversion handling ___________________________
 ###
-# used for 1 to 1 conversions, like binary <-> number, or time-zones
+# used for non number<->number conversions, like binary <-> number, or time-zones
 # keep dictionary with regex patterns for keys and what function they need for conversion instead normal values
 # call function directly based on key
 ###
 # matches
-timezone_regex = r'^[a-z]{3,5}(?:[+-]\d{1,2}(?::\d{2})?)?$' # find letters, letters + hours, letters + hours + minutes
+timezone_offset_regex = r'^[a-z]{3,5}(?:[+-]\d{1,2}(?::\d{2})?)?$' # find letters, letters + hours, letters + hours + minutes
+timezone_city_regex = r'^[a-z]+$'
 
 # regex pattern dictionary
 regex_dict = {
-    re.compile(timezone_regex): time_zone_convert
+    re.compile(timezone_offset_regex): time_zone_convert,
+    re.compile(timezone_city_regex): time_zone_convert
 }
 
 def choose_regex_convert(val, src, target):
-    for pattern, func in regex_dict.items():
-        if re.match(pattern, src) and re.match(pattern, target):
+    # loop through unique functions
+    for func in set(regex_dict.values()):
+        # check if any regex of same function matches input
+        src_match = any(re.match(pattern, src) for pattern, f in regex_dict.items() if f is func)
+        target_match = any(re.match(pattern, target) for pattern, f in regex_dict.items() if f is func)
+        if src_match and target_match:
             func(val, src, target)
             return True
     return False
@@ -304,9 +360,9 @@ for kind, unit_dict, conversion_type in conversions:
             done = True
             break
     elif kind == 'regex':
-        if conversion_type(value, source, target):
-            done = True
-            break
+        conversion_type(value, source, target)
+        done = True
+        break
     if done: 
         break
 else:
