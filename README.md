@@ -20,6 +20,7 @@ In CLI (terminal) input the .py path and info that you have and get answer:
   - 12:00 ECT = 20:00 UTC+3
 ### Notes
 - Conversions support unit name and symbol (m to kilometer, s to min, feet to kilometer)
+- Time zone conversion works only with 24h time (no support for PM/AM)
 - Time zone conversions support abreviation, offset or country name (UTC+3 to EST, EST to WST, CLT-4 to London)
 - Some timezone abreviations have multiple meanings (for example CST is China +8 hours and Mexico -6 hours) so conversion will show every posibility if using just abreviation and not city/manual offset
 - Time zone conversions doesn't show date (if time goes after 23:59 or before 00:01, no notice of different day will be shown)
